@@ -1,0 +1,32 @@
+a)
+
+first i ran an object dump to check internal behavior using iscv64-linux-gnu-objdump -d target_rushillll. this gave the disassembled instructions of the binary. main was calling scanf with the format string "%63s" and then calling strcmp to compare that input against some string in memory. if strcmp returned 0, it would jump to the .pass block and print the yes message, 
+
+since the binary was compiled with -no-pie and -fno-PIE, all memory addresses are fixed.
+
+giving a large input did nothing cus scanf limited it to 63.
+
+to find the actual password i ran strings target_rushillll which gave all readable strings in the binary. these lines showed: 
+
+%63s
+g/rE/BpC9aR5nYmAGOrbRNtJj1YZZyHF2FrjCMpsv4Y=
+You have passed!
+
+clearly its the second string.
+
+
+b)
+
+i started the same way and did an obj dump. the main function looked different and instead of scanf it was calling _IO_gets which is gets(). gets has no bound checking defined here and itll take wtv input i give it.
+
+also, after gets returns, the code does mv a0, sp which sets a0 to the stack pointer, and then immediately does bnez a0 which branches to .fail if a0 is not zero. since the sp is never zero, this means the .pass block is completely unreachable through normal execution. itll always print the sorry, and you cant reach pass via input
+
+i tried giving a very large input and the program crashed with a seg fault. this confirmed that gets was overflowing the buffer and corrupting the stack.
+
+the buffer allocated for input was 112 bytes and above that on the stack was 8 bytes for a saved register, and then 8 bytes for the saved ra. so, the return address sits at offset 120 from the start of the buffer. when main finishes and executes ret, it jumps to whatever address is stored there.
+
+Since the binary is compiled with -no-pie, the address of .pass is fixed and i could see it directly in the objdump output as 0x104e8. so, i can send 120 bytes of junk to fill up the buffer and the saved register, and then the 8 byte address of .pass in little endian format. wheb main returns itll jump to .pass instead of back to the standard library, and .pass prints what i need
+
+made the payload using printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\xe8\x04\x01\x00\x00\x00\x00\x00' > payload
+
+that is 120 As followed by the bytes e8 04 01 00 00 00 00 00 ie 0x104e8 in little endian. it printed sorry because it goes there no matter what, then jumped to .pass and printed what i needed, then printed seg fault cus tack corruption.
