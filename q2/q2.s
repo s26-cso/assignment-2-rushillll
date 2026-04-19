@@ -1,8 +1,8 @@
 .section .bss
 .align 2
-arr:    .space 4000
-result: .space 4000
-stk:    .space 4000
+arr:    .space 400000
+result: .space 400000
+stk:    .space 400000
 
 .section .data
 fmt_mid: .string "%d "
