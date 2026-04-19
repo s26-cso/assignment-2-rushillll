@@ -5,9 +5,9 @@
 
 .section .text
 
-.globl makenode
+.globl make_node
 
-makenode:
+make_node:
     addi    sp, sp, -16
     sd      ra, 8(sp)
     sd      s0, 0(sp)
@@ -40,7 +40,7 @@ insert:
 
     bnez    s0, insertcmp      # root null check
     mv      a0, s1             # else base case, create node
-    call    makenode           # ret newnode
+    call    make_node           # ret newnode
     j       insertret
 
 insertcmp:
