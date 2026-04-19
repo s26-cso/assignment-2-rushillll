@@ -10,7 +10,7 @@ int main()
     {
         char libname[16]; // buffer for library 
 
-        snprintf(libname, sizeof(libname), "lib%s.so", op); // build lib filename from op
+        snprintf(libname, sizeof(libname), "./lib%s.so", op); // build lib filename from op
 
         void *handle = dlopen(libname, RTLD_NOW); // open library, resolve everything immediately, read all functions from memory
         if (!handle) return 1;
